@@ -13,20 +13,6 @@
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-      "rapidapi_key": {
-        "title": "RapidAPI Key",
-        "type": "string",
-        "description": "Your RapidAPI key for accessing real estate data",
-        "editor": "textfield",
-        "isSecret": true
-      },
-      "rapidapi_host": {
-        "title": "RapidAPI Host",
-        "type": "string",
-        "description": "RapidAPI host for real estate data",
-        "default": "realtor-search.p.rapidapi.com",
-        "editor": "textfield"
-      },
       "database_url": {
         "title": "Database URL",
         "type": "string",
@@ -47,7 +33,7 @@
         "default": 3000
       }
     },
-    "required": ["rapidapi_key", "database_url"]
+    "required": []
   },
   "storages": {
     "dataset": {

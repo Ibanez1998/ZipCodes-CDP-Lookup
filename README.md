@@ -1,6 +1,6 @@
-# CDP API Lookup
+# CDP API Lookup - Direct Real Estate API Integration
 
-A comprehensive real estate API that provides listing status, market data, and property insights for Apify platform.
+A comprehensive real estate API that directly integrates with Zillow.com and Realtor.com APIs, bypassing RapidAPI to provide listing status, market data, and property insights on the Apify platform.
 
 ## Features
 
@@ -43,17 +43,18 @@ The API uses Apify token authentication. Include your token in one of these ways
 
 Set these environment variables in your Apify actor:
 
-- `RAPIDAPI_KEY`: Your RapidAPI key for accessing real estate data
-- `RAPIDAPI_HOST`: RapidAPI host (default: realtor-search.p.rapidapi.com)
-- `DATABASE_URL`: PostgreSQL connection string for caching
+- `DATABASE_URL`: PostgreSQL connection string for caching (optional)
 - `ENABLE_DEBUG_LOGGING`: Enable debug logging (YES/NO)
 - `PORT`: Server port (default: 3000)
 
+**Note**: No API keys required! This actor connects directly to public APIs.
+
 ## Data Sources
 
-- Primary: RapidAPI Realtor Search API
-- Fallback: Realistic mock data based on ZIP code patterns
-- Caching: PostgreSQL database for performance optimization
+- **Primary**: Direct integration with Zillow.com internal APIs
+- **Secondary**: Direct integration with Realtor.com internal APIs  
+- **Fallback**: Data merging from both sources for comprehensive coverage
+- **Caching**: PostgreSQL database for performance optimization
 
 ## Rate Limiting
 

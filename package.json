@@ -1,14 +1,13 @@
 {
   "name": "zipcode-cdp-lookup",
-  "version": "1.0.0",
-  "description": "CDP API Lookup - Real Estate Listing API for Apify",
+  "version": "2.0.0",
+  "description": "CDP API Lookup - Direct Real Estate API Integration for Zillow and Realtor.com",
   "type": "module",
-  "main": "dist/server.js",
+  "main": "src/main.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "ts-node src/server.ts",
-    "lint": "eslint src/**/*.ts",
+    "start": "node src/main.js",
+    "dev": "node --watch src/main.js",
+    "lint": "eslint src/**/*.js",
     "test": "jest"
   },
   "keywords": [

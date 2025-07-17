@@ -7,17 +7,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev dependencies for build)
-RUN npm install
+# Install only production dependencies
+RUN npm install --only=production
 
 # Copy the rest of the application code
 COPY . .
-
-# Build the TypeScript application
-RUN npm run build
-
-# Remove dev dependencies after build
-RUN npm prune --production
 
 # Expose the port the app runs on
 EXPOSE 3000
@@ -35,4 +29,4 @@ RUN chown -R nodejs:nodejs /app
 USER nodejs
 
 # Define the command to run the application
-CMD ["npm", "start"]
+CMD ["node", "src/main.js"]
