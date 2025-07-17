@@ -284,11 +284,25 @@ app.get('/property-insights', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`CDP Lookup API running on port ${PORT}`);
 });
 
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Received SIGTERM, shutting down gracefully...');
+    server.close(() => {
+        Actor.exit();
+    });
+});
+
 // Keep the actor running
-setInterval(() => {
-    console.log('Actor still running...');
-}, 30000);
+await Actor.main(async () => {
+    console.log('Actor is running and ready to serve requests');
+    
+    // Keep the actor alive
+    return new Promise((resolve) => {
+        // The actor will stay alive until terminated
+        process.on('SIGTERM', resolve);
+    });
+});
