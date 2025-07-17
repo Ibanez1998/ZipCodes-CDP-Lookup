@@ -1,7 +1,7 @@
 // src/services/marketDataService.ts
 import axios from 'axios';
 import { Pool } from 'pg';
-import { debugLog } from '../utils/logger';
+import { debugLog } from '../utils/logger.js';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
