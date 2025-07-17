@@ -1,5 +1,5 @@
 {
-  "name": "cdp-api-lookup",
+  "name": "cdp-lookup",
   "version": "1.0.0",
   "buildTag": "latest",
   "env": {
