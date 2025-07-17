@@ -140,6 +140,149 @@ app.get('/market-data', async (req, res) => {
     }
 });
 
+// Bulk listing check endpoint
+app.post('/bulk-listing-check', async (req, res) => {
+    try {
+        const { properties } = req.body;
+        
+        if (!properties || !Array.isArray(properties)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request',
+                message: 'properties array is required'
+            });
+        }
+
+        if (properties.length > 10) {
+            return res.status(400).json({
+                success: false,
+                error: 'Too many properties',
+                message: 'Maximum 10 properties per request'
+            });
+        }
+
+        console.log(`[API] Bulk listing check for ${properties.length} properties`);
+
+        const results = await Promise.all(
+            properties.map(async (prop) => {
+                try {
+                    // Try both APIs
+                    let data = await zillowAPI.searchByAddress(prop.address, prop.zipCode);
+                    if (!data) {
+                        data = await realtorAPI.searchByAddress(prop.address, prop.zipCode);
+                    }
+
+                    return data || {
+                        address: `${prop.address}, ${prop.zipCode}`,
+                        status: 'not_found',
+                        error: 'Property not found'
+                    };
+                } catch (error) {
+                    return {
+                        address: `${prop.address}, ${prop.zipCode}`,
+                        status: 'error',
+                        error: error.message
+                    };
+                }
+            })
+        );
+
+        res.json({
+            success: true,
+            data: {
+                total: properties.length,
+                results: results
+            },
+            metadata: {
+                query_timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('[API] Error in bulk-listing-check:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
+// Property insights endpoint
+app.get('/property-insights', async (req, res) => {
+    try {
+        const { address, zipCode } = req.query;
+        
+        if (!address || !zipCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameters',
+                message: 'Both address and zipCode are required'
+            });
+        }
+
+        console.log(`[API] Property insights request: ${address}, ${zipCode}`);
+
+        // Get listing data and market data in parallel
+        const [listingData, marketData] = await Promise.all([
+            (async () => {
+                let data = await zillowAPI.searchByAddress(address, zipCode);
+                if (!data) {
+                    data = await realtorAPI.searchByAddress(address, zipCode);
+                }
+                return data;
+            })(),
+            (async () => {
+                const [zillowData, realtorData] = await Promise.all([
+                    zillowAPI.getMarketData(zipCode),
+                    realtorAPI.getMarketData(zipCode)
+                ]);
+                
+                return {
+                    median_price: zillowData?.median_listing_price || realtorData?.median_price || null,
+                    days_on_market: zillowData?.median_days_on_market || realtorData?.days_on_market || null,
+                    active_listings: realtorData?.active_listings || zillowData?.inventory_count || null
+                };
+            })()
+        ]);
+
+        const insights = {
+            property: listingData || { status: 'not_found' },
+            market_context: marketData,
+            analysis: {}
+        };
+
+        // Generate insights if we have both property and market data
+        if (listingData && marketData && listingData.price && marketData.median_price) {
+            insights.analysis = {
+                price_vs_market: ((listingData.price - marketData.median_price) / marketData.median_price * 100).toFixed(1) + '%',
+                market_position: 
+                    listingData.days_on_market > marketData.days_on_market * 1.5 ? 'slow_seller' :
+                    listingData.days_on_market < marketData.days_on_market * 0.5 ? 'fast_seller' : 
+                    'average',
+                value_assessment: 
+                    listingData.price < marketData.median_price * 0.9 ? 'below_market' :
+                    listingData.price > marketData.median_price * 1.1 ? 'above_market' :
+                    'at_market'
+            };
+        }
+
+        res.json({
+            success: true,
+            data: insights,
+            metadata: {
+                query_timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('[API] Error in property-insights:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`CDP Lookup API running on port ${PORT}`);
