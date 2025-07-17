@@ -86,6 +86,60 @@ app.get('/listing-status', async (req, res) => {
     }
 });
 
+// Market data endpoint
+app.get('/market-data', async (req, res) => {
+    try {
+        const { zipCode } = req.query;
+        
+        if (!zipCode) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameter',
+                message: 'zipCode is required'
+            });
+        }
+
+        console.log(`[API] Market data request for: ${zipCode}`);
+
+        // Get data from both sources
+        const [zillowData, realtorData] = await Promise.all([
+            zillowAPI.getMarketData(zipCode),
+            realtorAPI.getMarketData(zipCode)
+        ]);
+
+        // Merge data, preferring non-null values
+        const marketData = {
+            zip_code: zipCode,
+            median_price: zillowData?.median_listing_price || realtorData?.median_price || null,
+            median_sold_price: zillowData?.median_sold_price || realtorData?.median_sold_price || null,
+            days_on_market: zillowData?.median_days_on_market || realtorData?.days_on_market || null,
+            active_listings: realtorData?.active_listings || zillowData?.inventory_count || null,
+            new_listings: realtorData?.new_listings || zillowData?.new_listings_count || null,
+            price_change_pct: zillowData?.price_change_percent || realtorData?.price_change_pct || null,
+            sources: {
+                zillow: !!zillowData,
+                realtor: !!realtorData
+            }
+        };
+
+        res.json({
+            success: true,
+            data: marketData,
+            metadata: {
+                sources_used: marketData.sources,
+                query_timestamp: new Date().toISOString()
+            }
+        });
+    } catch (error) {
+        console.error('[API] Error in market-data:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`CDP Lookup API running on port ${PORT}`);
