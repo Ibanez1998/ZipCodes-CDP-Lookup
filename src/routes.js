@@ -1,16 +1,23 @@
 import { Pool } from 'pg';
 import { debugLog } from './utils/logger.js';
 
-const pool = process.env.DATABASE_URL ? new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL?.includes('railway.app') ? { rejectUnauthorized: false } : false,
-}) : null;
+let pool = null;
+
+function initializePool() {
+    if (!pool && process.env.DATABASE_URL) {
+        pool = new Pool({
+            connectionString: process.env.DATABASE_URL,
+            ssl: process.env.DATABASE_URL?.includes('railway.app') ? { rejectUnauthorized: false } : false,
+        });
+    }
+    return pool;
+}
 
 export function setupRoutes(app, state) {
     // Health check endpoint
     app.get('/health', async (req, res) => {
         try {
-            const dbStatus = pool ? await checkDatabaseConnection() : 'No database configured';
+            const dbStatus = initializePool() ? await checkDatabaseConnection() : 'No database configured';
             
             res.json({
                 success: true,
@@ -341,10 +348,11 @@ export function setupRoutes(app, state) {
 
 // Database helper functions
 async function checkDatabaseConnection() {
-    if (!pool) return 'No database configured';
+    const dbPool = initializePool();
+    if (!dbPool) return 'No database configured';
     
     try {
-        const result = await pool.query('SELECT NOW()');
+        const result = await dbPool.query('SELECT NOW()');
         return 'connected';
     } catch (error) {
         return `error: ${error.message}`;
@@ -352,11 +360,12 @@ async function checkDatabaseConnection() {
 }
 
 async function getCachedListing(address, zipCode) {
-    if (!pool) return null;
+    const dbPool = initializePool();
+    if (!dbPool) return null;
     
     try {
         const key = `listing:${address}:${zipCode}`.toLowerCase();
-        const result = await pool.query(
+        const result = await dbPool.query(
             'SELECT data FROM cache WHERE key = $1 AND expires_at > NOW()',
             [key]
         );
@@ -368,11 +377,12 @@ async function getCachedListing(address, zipCode) {
 }
 
 async function cacheListing(address, zipCode, data) {
-    if (!pool) return;
+    const dbPool = initializePool();
+    if (!dbPool) return;
     
     try {
         const key = `listing:${address}:${zipCode}`.toLowerCase();
-        await pool.query(
+        await dbPool.query(
             `INSERT INTO cache (key, data, expires_at) 
              VALUES ($1, $2, NOW() + INTERVAL '24 hours')
              ON CONFLICT (key) DO UPDATE 
@@ -385,11 +395,12 @@ async function cacheListing(address, zipCode, data) {
 }
 
 async function getCachedMarketData(zipCode) {
-    if (!pool) return null;
+    const dbPool = initializePool();
+    if (!dbPool) return null;
     
     try {
         const key = `market:${zipCode}`;
-        const result = await pool.query(
+        const result = await dbPool.query(
             'SELECT data FROM cache WHERE key = $1 AND expires_at > NOW()',
             [key]
         );
@@ -401,11 +412,12 @@ async function getCachedMarketData(zipCode) {
 }
 
 async function cacheMarketData(zipCode, data) {
-    if (!pool) return;
+    const dbPool = initializePool();
+    if (!dbPool) return;
     
     try {
         const key = `market:${zipCode}`;
-        await pool.query(
+        await dbPool.query(
             `INSERT INTO cache (key, data, expires_at) 
              VALUES ($1, $2, NOW() + INTERVAL '24 hours')
              ON CONFLICT (key) DO UPDATE 
