@@ -3,8 +3,6 @@ import express from 'express';
 import { ZillowAPI } from './apis/zillowAPI.js';
 import { RealtorAPI } from './apis/realtorAPI.js';
 
-await Actor.init();
-
 const app = express();
 app.use(express.json());
 
@@ -283,10 +281,20 @@ app.get('/property-insights', async (req, res) => {
     }
 });
 
+// Start the server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     console.log(`CDP Lookup API running on port ${PORT}`);
-    console.log('Actor is ready to serve requests');
 });
 
-console.log('Actor started successfully');
+// Initialize Apify actor
+await Actor.init();
+console.log('Actor initialized successfully');
+
+// Keep the actor running
+Actor.main(async () => {
+    console.log('Actor is running and ready to serve requests');
+    return new Promise(() => {
+        // Keep running indefinitely
+    });
+});
