@@ -6,8 +6,8 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
-import { marketDataService } from './services/marketDataService.js';
-import { debugLog } from './utils/logger.js';
+import { marketDataService } from './services/marketDataService';
+import { debugLog } from './utils/logger';
 
 dotenv.config();
 

@@ -2,6 +2,7 @@
   "name": "zipcode-cdp-lookup",
   "version": "1.0.0",
   "description": "CDP API Lookup - Real Estate Listing API for Apify",
+  "type": "module",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
