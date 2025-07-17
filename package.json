@@ -1,0 +1,51 @@
+{
+  "name": "rapidapi-real-estate-api",
+  "version": "1.0.0",
+  "description": "Standalone RapidAPI Real Estate Listing API",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "lint": "eslint src/**/*.ts",
+    "test": "jest"
+  },
+  "keywords": [
+    "rapidapi",
+    "real-estate",
+    "api",
+    "listings",
+    "market-data",
+    "property-insights"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "axios": "^1.5.0",
+    "pg": "^8.11.3",
+    "redis": "^4.6.8",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^6.10.0",
+    "compression": "^1.7.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/cors": "^2.8.13",
+    "@types/node": "^20.5.0",
+    "@types/pg": "^8.10.2",
+    "@types/compression": "^1.7.2",
+    "typescript": "^5.1.6",
+    "ts-node": "^10.9.1",
+    "eslint": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "jest": "^29.6.2",
+    "@types/jest": "^29.5.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
