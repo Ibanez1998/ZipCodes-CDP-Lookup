@@ -60,7 +60,7 @@ const validateApifyKey = (req: Request, res: Response, next: Function) => {
   
   // Log usage for analytics
   debugLog('[Apify] API call from:', {
-    token: apifyToken.substring(0, 8) + '...',
+    token: String(apifyToken).substring(0, 8) + '...',
     endpoint: req.path,
     method: req.method,
     ip: req.ip
@@ -406,9 +406,9 @@ app.get('/property-insights', async (req: Request, res: Response) => {
         market_velocity: marketData.market_velocity
       } : null,
       insights: {
-        price_vs_market: null,
-        market_position: null,
-        investment_score: null
+        price_vs_market: null as string | null,
+        market_position: null as string | null,
+        investment_score: null as number | null
       }
     };
 

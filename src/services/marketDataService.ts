@@ -890,7 +890,7 @@ export class MarketDataService {
       photos: selectedStatus === 'for_sale' ? mockPhotos : [],
       description: selectedStatus === 'for_sale' ? 
         `Beautiful ${Math.floor(random * 3) + 2} bedroom home with modern updates and great location in a desirable neighborhood.` : 
-        null,
+        undefined,
       bedrooms: Math.floor(random * 3) + 2,
       bathrooms: Math.floor(random * 2) + 1,
       square_feet: Math.floor(random * 1000) + 1200,
@@ -898,9 +898,9 @@ export class MarketDataService {
       property_type: random > 0.8 ? 'Condo' : 'Single Family',
       year_built: Math.floor(random * 50) + 1970,
       features: ['garage', 'fireplace', random > 0.5 ? 'pool' : 'patio', 'hardwood floors'].filter(f => f !== null),
-      mls_number: selectedStatus === 'for_sale' ? `MLS${Math.floor(random * 100000)}` : null,
+      mls_number: selectedStatus === 'for_sale' ? `MLS${Math.floor(random * 100000)}` : undefined,
       virtual_tour_url: selectedStatus === 'for_sale' && random > 0.7 ? 
-        'https://example.com/virtual-tour' : null,
+        'https://example.com/virtual-tour' : undefined,
       listing_history: selectedStatus === 'for_sale' ? [{
         date: new Date(Date.now() - (daysOnMarket * 24 * 60 * 60 * 1000)).toISOString().split('T')[0],
         event: 'Listed',
