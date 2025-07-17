@@ -284,25 +284,9 @@ app.get('/property-insights', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
     console.log(`CDP Lookup API running on port ${PORT}`);
+    console.log('Actor is ready to serve requests');
 });
 
-// Handle graceful shutdown
-process.on('SIGTERM', () => {
-    console.log('Received SIGTERM, shutting down gracefully...');
-    server.close(() => {
-        Actor.exit();
-    });
-});
-
-// Keep the actor running
-await Actor.main(async () => {
-    console.log('Actor is running and ready to serve requests');
-    
-    // Keep the actor alive
-    return new Promise((resolve) => {
-        // The actor will stay alive until terminated
-        process.on('SIGTERM', resolve);
-    });
-});
+console.log('Actor started successfully');
