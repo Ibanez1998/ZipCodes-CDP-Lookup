@@ -1,5 +1,5 @@
 {
-  "name": "cdp-lookup",
+  "name": "zipcode-cdp-lookup",
   "version": "1.0.0",
   "description": "CDP API Lookup - Real Estate Listing API for Apify",
   "main": "dist/server.js",
