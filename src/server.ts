@@ -1,4 +1,4 @@
-// src/server.ts - Standalone RapidAPI Real Estate API
+// src/server.ts - CDP API Lookup - Real Estate API for Apify
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -27,11 +27,11 @@ const pool = new Pool({
 app.use(helmet());
 app.use(compression());
 app.use(cors({
-  origin: '*', // RapidAPI will handle CORS
+  origin: '*', // Apify will handle CORS
   credentials: false
 }));
 
-// Rate limiting - RapidAPI handles most rate limiting, but we add our own as backup
+// Rate limiting - Apify handles most rate limiting, but we add our own as backup
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // limit each IP to 100 requests per windowMs
@@ -45,22 +45,22 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// RapidAPI Authentication Middleware
-const validateRapidAPIKey = (req: Request, res: Response, next: Function) => {
-  const rapidAPIKey = req.headers['x-rapidapi-key'];
-  const rapidAPIHost = req.headers['x-rapidapi-host'];
+// Apify Authentication Middleware
+const validateApifyKey = (req: Request, res: Response, next: Function) => {
+  const apifyToken = req.headers['authorization']?.replace('Bearer ', '') || 
+                    req.headers['x-apify-token'] || 
+                    req.query.token;
   
-  if (!rapidAPIKey || !rapidAPIHost) {
+  if (!apifyToken) {
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'API key required. Subscribe at rapidapi.com'
+      message: 'API token required. Get your token from Apify Console'
     });
   }
   
   // Log usage for analytics
-  debugLog('[RapidAPI] API call from:', {
-    key: rapidAPIKey,
-    host: rapidAPIHost,
+  debugLog('[Apify] API call from:', {
+    token: apifyToken.substring(0, 8) + '...',
     endpoint: req.path,
     method: req.method,
     ip: req.ip
@@ -70,7 +70,7 @@ const validateRapidAPIKey = (req: Request, res: Response, next: Function) => {
 };
 
 // Apply authentication to all routes
-app.use(validateRapidAPIKey);
+app.use(validateApifyKey);
 
 // Health check endpoint
 app.get('/health', async (req: Request, res: Response) => {
@@ -80,8 +80,8 @@ app.get('/health', async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       database_connected: false,
-      api_name: 'Real Estate Listing API',
-      description: 'Get real estate listing status, market data, and property insights'
+      api_name: 'CDP API Lookup',
+      description: 'Real Estate Listing API for Apify - Get listing status, market data, and property insights'
     };
 
     // Test database connection
@@ -478,7 +478,7 @@ app.use((error: any, req: Request, res: Response, next: Function) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  debugLog(`🚀 RapidAPI Real Estate API server started on port ${PORT}`);
+  debugLog(`🚀 CDP API Lookup server started on port ${PORT}`);
   debugLog(`📚 API Documentation: Available at /health endpoint`);
 });
 

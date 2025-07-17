@@ -1,0 +1,86 @@
+{
+  "name": "cdp-api-lookup",
+  "version": "1.0.0",
+  "buildTag": "latest",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "dockerfile": "./Dockerfile",
+  "readme": "./README.md",
+  "input": {
+    "title": "CDP API Lookup Configuration",
+    "description": "Real Estate Listing API for Apify",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+      "rapidapi_key": {
+        "title": "RapidAPI Key",
+        "type": "string",
+        "description": "Your RapidAPI key for accessing real estate data",
+        "editor": "textfield",
+        "isSecret": true
+      },
+      "rapidapi_host": {
+        "title": "RapidAPI Host",
+        "type": "string",
+        "description": "RapidAPI host for real estate data",
+        "default": "realtor-search.p.rapidapi.com",
+        "editor": "textfield"
+      },
+      "database_url": {
+        "title": "Database URL",
+        "type": "string",
+        "description": "PostgreSQL database connection string",
+        "editor": "textfield",
+        "isSecret": true
+      },
+      "enable_debug_logging": {
+        "title": "Enable Debug Logging",
+        "type": "boolean",
+        "description": "Enable debug logging for troubleshooting",
+        "default": true
+      },
+      "port": {
+        "title": "Port",
+        "type": "integer",
+        "description": "Port number for the API server",
+        "default": 3000
+      }
+    },
+    "required": ["rapidapi_key", "database_url"]
+  },
+  "storages": {
+    "dataset": {
+      "actorSpecification": 1,
+      "views": {
+        "overview": {
+          "title": "Overview",
+          "transformation": {
+            "fields": [
+              "zip_code",
+              "median_price",
+              "days_on_market",
+              "active_listings",
+              "last_updated"
+            ]
+          }
+        },
+        "listings": {
+          "title": "Property Listings",
+          "transformation": {
+            "fields": [
+              "address",
+              "status",
+              "price",
+              "bedrooms",
+              "bathrooms",
+              "square_feet",
+              "agent",
+              "listing_date"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

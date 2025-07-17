@@ -1,7 +1,7 @@
 {
-  "name": "rapidapi-real-estate-api",
+  "name": "cdp-api-lookup",
   "version": "1.0.0",
-  "description": "Standalone RapidAPI Real Estate Listing API",
+  "description": "CDP API Lookup - Real Estate Listing API for Apify",
   "main": "dist/server.js",
   "scripts": {
     "build": "tsc",
@@ -11,7 +11,8 @@
     "test": "jest"
   },
   "keywords": [
-    "rapidapi",
+    "apify",
+    "cdp",
     "real-estate",
     "api",
     "listings",
@@ -29,7 +30,8 @@
     "redis": "^4.6.8",
     "helmet": "^7.0.0",
     "express-rate-limit": "^6.10.0",
-    "compression": "^1.7.4"
+    "compression": "^1.7.4",
+    "apify": "^3.1.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
