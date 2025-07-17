@@ -7,14 +7,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install --only=production
+# Install all dependencies (including dev dependencies for build)
+RUN npm install
 
 # Copy the rest of the application code
 COPY . .
 
 # Build the TypeScript application
 RUN npm run build
+
+# Remove dev dependencies after build
+RUN npm prune --production
 
 # Expose the port the app runs on
 EXPOSE 3000
