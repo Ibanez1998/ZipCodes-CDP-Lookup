@@ -2,6 +2,7 @@ import { Actor } from 'apify';
 import express from 'express';
 import { ZillowAPI } from './apis/zillowAPI.js';
 import { RealtorAPI } from './apis/realtorAPI.js';
+import PropertyLookup from './propertyLookup.js';
 
 const app = express();
 app.use(express.json());
@@ -9,6 +10,10 @@ app.use(express.json());
 // Initialize API clients
 const zillowAPI = new ZillowAPI();
 const realtorAPI = new RealtorAPI();
+
+// Initialize PropertyLookup
+const dbConnectionString = process.env.DATABASE_URL || 'postgresql://postgres:RShMyZXCtckIarjrdvQkwACWCORhAXZU@trolley.proxy.rlwy.net:21200/railway';
+const propertyLookup = new PropertyLookup(dbConnectionString);
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
@@ -138,7 +143,7 @@ app.get('/market-data', async (req, res) => {
     }
 });
 
-// Bulk listing check endpoint
+// Bulk listing check endpoint - now uses PropertyLookup system
 app.post('/bulk-listing-check', async (req, res) => {
     try {
         const { properties } = req.body;
@@ -151,52 +156,133 @@ app.post('/bulk-listing-check', async (req, res) => {
             });
         }
 
-        if (properties.length > 10) {
-            return res.status(400).json({
-                success: false,
-                error: 'Too many properties',
-                message: 'Maximum 10 properties per request'
-            });
-        }
-
+        // Remove the 10-property limit - process all properties
         console.log(`[API] Bulk listing check for ${properties.length} properties`);
 
-        const results = await Promise.all(
-            properties.map(async (prop) => {
-                try {
-                    // Try both APIs
-                    let data = await zillowAPI.searchByAddress(prop.address, prop.zipCode);
-                    if (!data) {
-                        data = await realtorAPI.searchByAddress(prop.address, prop.zipCode);
-                    }
+        const results = [];
+        let activeListings = 0;
 
-                    return data || {
-                        address: `${prop.address}, ${prop.zipCode}`,
-                        status: 'not_found',
-                        error: 'Property not found'
-                    };
-                } catch (error) {
-                    return {
-                        address: `${prop.address}, ${prop.zipCode}`,
-                        status: 'error',
-                        error: error.message
-                    };
+        for (const prop of properties) {
+            try {
+                // Use PropertyLookup system for comprehensive search
+                const propertyData = await propertyLookup.queryPropertyByAddress(
+                    prop.address, 
+                    prop.city || '', 
+                    prop.state || '', 
+                    prop.zipCode || ''
+                );
+
+                // Update database with results (if seller UUID provided)
+                if (prop.sellerUuid) {
+                    propertyData.address_used = `${prop.address}, ${prop.city || ''}, ${prop.state || ''} ${prop.zipCode || ''}`;
+                    await propertyLookup.updateSellerPropertyData(prop.sellerUuid, propertyData);
                 }
-            })
-        );
+
+                // Count active listings
+                if (propertyData.is_active_listing) {
+                    activeListings++;
+                }
+
+                results.push({
+                    address: `${prop.address}, ${prop.zipCode}`,
+                    listing_status: propertyData.listing_status,
+                    is_active_listing: propertyData.is_active_listing,
+                    price: propertyData.price,
+                    bedrooms: propertyData.bedrooms,
+                    bathrooms: propertyData.bathrooms,
+                    square_feet: propertyData.squareFeet,
+                    sources: propertyData.sources
+                });
+            } catch (error) {
+                console.error(`[API] Error processing property ${prop.address}:`, error);
+                results.push({
+                    address: `${prop.address}, ${prop.zipCode}`,
+                    listing_status: 'error',
+                    is_active_listing: false,
+                    error: error.message
+                });
+            }
+        }
 
         res.json({
             success: true,
             data: {
                 total: properties.length,
+                active_listings: activeListings,
                 results: results
             },
             metadata: {
-                query_timestamp: new Date().toISOString()
+                query_timestamp: new Date().toISOString(),
+                message: `Checked ${properties.length} properties. Found ${activeListings} active listings.`
             }
         });
     } catch (error) {
         console.error('[API] Error in bulk-listing-check:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
+// Dashboard properties endpoint - get cached properties with filtering
+app.get('/dashboard-properties', async (req, res) => {
+    try {
+        const { status, limit = 100, offset = 0 } = req.query;
+        
+        let whereClause = '';
+        if (status) {
+            if (status === 'active') {
+                whereClause = 'WHERE is_active_listing = true';
+            } else if (status === 'not_listed') {
+                whereClause = "WHERE listing_status = 'not_for_sale'";
+            } else {
+                whereClause = `WHERE listing_status = '${status}'`;
+            }
+        }
+        
+        const query = `
+            SELECT 
+                pdc.address_used,
+                pdc.listing_status,
+                pdc.is_active_listing,
+                pdc.listing_price,
+                pdc.bedrooms,
+                pdc.bathrooms,
+                pdc.square_feet,
+                pdc.last_updated,
+                si.first_name,
+                si.last_name,
+                si.personal_city,
+                si.personal_state
+            FROM property_data_cache pdc
+            JOIN seller_intent si ON pdc.seller_intent_uuid = si.uuid
+            ${whereClause}
+            ORDER BY pdc.last_updated DESC
+            LIMIT ${limit} OFFSET ${offset}
+        `;
+        
+        console.log(`[API] Dashboard properties query: ${query}`);
+        
+        // This would normally use a proper database client, but for now return mock data
+        res.json({
+            success: true,
+            data: {
+                properties: [],
+                total: 0,
+                active_listings: 0,
+                not_listed: 0,
+                sold: 0,
+                pending: 0
+            },
+            metadata: {
+                query_timestamp: new Date().toISOString(),
+                filters: { status, limit, offset }
+            }
+        });
+    } catch (error) {
+        console.error('[API] Error in dashboard-properties:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error',
